@@ -10,6 +10,7 @@ import java.math.BigDecimal
 import java.time.Instant
 import java.util.Currency
 import java.util.UUID
+import java.time.ZoneId
 
 class LargeFirstPaymentRuleTest {
 
@@ -86,5 +87,6 @@ class LargeFirstPaymentRuleTest {
         recipientTrusted = false,
         customerAveragePayment = BigDecimal("100.00"),
         recentAttemptCount = 0,
+        customerTimeZone = ZoneId.of("Europe/London"),
     )
 }

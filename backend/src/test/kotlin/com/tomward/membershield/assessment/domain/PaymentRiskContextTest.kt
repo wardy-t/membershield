@@ -7,6 +7,7 @@ import java.math.BigDecimal
 import java.time.Instant
 import java.util.Currency
 import java.util.UUID
+import java.time.ZoneId
 
 class PaymentRiskContextTest {
 
@@ -50,5 +51,6 @@ class PaymentRiskContextTest {
         recipientTrusted = false,
         customerAveragePayment = customerAveragePayment,
         recentAttemptCount = recentAttemptCount,
+        customerTimeZone = ZoneId.of("Europe/London"),
     )
 }

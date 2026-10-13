@@ -10,4 +10,5 @@ enum class RiskReasonCode {
     NEW_RECIPIENT,
     UNUSUAL_AMOUNT,
     LARGE_FIRST_PAYMENT,
+    REPEATED_ATTEMPTS,
 }

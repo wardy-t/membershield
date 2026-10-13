@@ -10,6 +10,7 @@ import java.math.BigDecimal
 import java.time.Instant
 import java.util.Currency
 import java.util.UUID
+import java.time.ZoneId
 
 class UnusualAmountRuleTest {
 
@@ -72,5 +73,6 @@ class UnusualAmountRuleTest {
         recipientTrusted = false,
         customerAveragePayment = customerAveragePayment,
         recentAttemptCount = 0,
+        customerTimeZone = ZoneId.of("Europe/London"),
     )
 }
