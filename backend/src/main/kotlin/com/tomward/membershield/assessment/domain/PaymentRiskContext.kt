@@ -1,6 +1,7 @@
 package com.tomward.membershield.assessment.domain
 
 import java.math.BigDecimal
+import java.time.ZoneId
 
 data class PaymentRiskContext(
     val payment: ProposedPayment,
@@ -8,6 +9,7 @@ data class PaymentRiskContext(
     val recipientTrusted: Boolean,
     val customerAveragePayment: BigDecimal,
     val recentAttemptCount: Int,
+    val customerTimeZone: ZoneId,
 ) {
     init {
         require(customerAveragePayment >= BigDecimal.ZERO) {

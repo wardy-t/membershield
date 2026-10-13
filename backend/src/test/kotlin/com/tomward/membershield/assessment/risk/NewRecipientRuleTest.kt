@@ -11,6 +11,7 @@ import java.math.BigDecimal
 import java.time.Instant
 import java.util.Currency
 import java.util.UUID
+import java.time.ZoneId
 
 class NewRecipientRuleTest {
 
@@ -55,5 +56,6 @@ class NewRecipientRuleTest {
         recipientTrusted = false,
         customerAveragePayment = BigDecimal("75.00"),
         recentAttemptCount = 0,
+        customerTimeZone = ZoneId.of("Europe/London"),
     )
 }
