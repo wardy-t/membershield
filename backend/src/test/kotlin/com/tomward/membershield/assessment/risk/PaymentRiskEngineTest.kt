@@ -84,6 +84,42 @@ class PaymentRiskEngineTest {
         assertEquals(AssessmentDecision.ALLOW, assessment.decision)
     }
 
+    @Test
+    fun `combines multiple triggered rules into one assessment`() {
+        val engine = PaymentRiskEngine(
+            rules = listOf(
+                NewRecipientRule(),
+                UnusualAmountRule(),
+                LargeFirstPaymentRule(),
+            ),
+        )
+
+        val assessment = engine.assess(
+            riskContext(
+                recipientPreviouslyPaid = false,
+                amount = BigDecimal("1000.00"),
+                customerAveragePayment = BigDecimal("100.00"),
+            ),
+        )
+
+        assertEquals(65, assessment.score)
+        assertEquals(RiskLevel.HIGH, assessment.riskLevel)
+        assertEquals(
+            AssessmentDecision.ADDITIONAL_CONFIRMATION_REQUIRED,
+            assessment.decision,
+        )
+        assertEquals(
+            setOf(
+                RiskReasonCode.NEW_RECIPIENT,
+                RiskReasonCode.UNUSUAL_AMOUNT,
+                RiskReasonCode.LARGE_FIRST_PAYMENT,
+            ),
+            assessment.reasons
+                .map { reason -> reason.code }
+                .toSet(),
+        )
+    }
+
     private class FixedRiskRule(
         private val scoreImpact: Int,
     ) : RiskRule {
@@ -101,6 +137,8 @@ class PaymentRiskEngineTest {
 
     private fun riskContext(
         recipientPreviouslyPaid: Boolean = true,
+        amount: BigDecimal = BigDecimal("100.00"),
+        customerAveragePayment: BigDecimal = BigDecimal("75.00"),
     ) = PaymentRiskContext(
         payment = ProposedPayment(
             customerId = UUID.fromString(
@@ -109,14 +147,14 @@ class PaymentRiskEngineTest {
             recipientId = UUID.fromString(
                 "d1dbd4ea-482c-4dc6-a0f1-5d42ab2a82d0",
             ),
-            amount = BigDecimal("100.00"),
+            amount = amount,
             currency = Currency.getInstance("GBP"),
             reference = "Invoice 123",
             requestedAt = Instant.parse("2026-10-13T12:00:00Z"),
         ),
         recipientPreviouslyPaid = recipientPreviouslyPaid,
         recipientTrusted = false,
-        customerAveragePayment = BigDecimal("75.00"),
+        customerAveragePayment = customerAveragePayment,
         recentAttemptCount = 0,
     )
 }
