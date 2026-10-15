@@ -7,6 +7,7 @@ import com.tomward.membershield.assessment.risk.RepeatedAttemptsRule
 import com.tomward.membershield.assessment.risk.UnusualAmountRule
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import java.time.Clock
 
 @Configuration
 class RiskAssessmentConfiguration {
@@ -21,4 +22,6 @@ class RiskAssessmentConfiguration {
                 RepeatedAttemptsRule(),
             ),
         )
+    @Bean
+    fun clock(): Clock = Clock.systemUTC()
 }
