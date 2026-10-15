@@ -1,0 +1,68 @@
+:root {
+  --colour-navy-950: #0b1f33;
+  --colour-navy-800: #173a5e;
+  --colour-navy-700: #24527a;
+  --colour-teal-700: #00796f;
+  --colour-teal-600: #008f83;
+  --colour-teal-100: #dff5f1;
+  --colour-teal-50: #effaf8;
+  --colour-surface: #ffffff;
+  --colour-background: #f3f6f8;
+  --colour-border: #d9e2e8;
+  --colour-text: #243746;
+  --colour-muted: #5e7180;
+  --colour-focus: #ffbf47;
+  --shadow-card: 0 18px 50px rgba(11, 31, 51, 0.08);
+
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  color: var(--colour-text);
+  background: var(--colour-background);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  background: var(--colour-background);
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid var(--colour-focus);
+  outline-offset: 3px;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
