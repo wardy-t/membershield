@@ -1,19 +1,91 @@
 import { useState } from 'react'
 import './App.css'
+import {
+  assessPayment,
+} from './features/assessment/assessmentApi'
 import PaymentAssessmentForm from './features/assessment/PaymentAssessmentForm'
 import PaymentAssessmentReview from './features/assessment/PaymentAssessmentReview'
-import { type PaymentAssessmentFormValues } from './features/assessment/types'
+import RiskAssessmentResult from './features/assessment/RiskAssessmentResult'
+import {
+  type PaymentAssessmentFormValues,
+  type RiskAssessmentResponse,
+} from './features/assessment/types'
 
 function App() {
   const [reviewValues, setReviewValues] =
     useState<PaymentAssessmentFormValues | null>(null)
 
-  const isReviewing = reviewValues !== null
+  const [assessment, setAssessment] =
+    useState<RiskAssessmentResponse | null>(null)
+
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const isReviewing = reviewValues !== null && assessment === null
+  const hasAssessment = assessment !== null
+
+  const handleFormSubmit = (
+    values: PaymentAssessmentFormValues,
+  ) => {
+    setReviewValues(values)
+    setAssessment(null)
+    setError(null)
+  }
+
+  const handleEdit = () => {
+    setReviewValues(null)
+    setError(null)
+  }
+
+  const handleAssessment = async () => {
+    if (!reviewValues) {
+      return
+    }
+
+    setIsSubmitting(true)
+    setError(null)
+
+    try {
+      const result = await assessPayment(reviewValues)
+      setAssessment(result)
+    } catch (assessmentError) {
+      const message =
+        assessmentError instanceof Error
+          ? assessmentError.message
+          : 'MemberShield could not assess this payment.'
+
+      setError(message)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleStartAgain = () => {
+    setReviewValues(null)
+    setAssessment(null)
+    setError(null)
+  }
+
+  const assessmentTitle = hasAssessment
+    ? 'Your payment assessment'
+    : isReviewing
+      ? 'Review your payment details'
+      : 'Assess a proposed payment'
+
+  const assessmentDescription = hasAssessment
+    ? 'Review the identified warning signs and the recommended next action.'
+    : isReviewing
+      ? 'Check that the information is correct before requesting a risk assessment.'
+      : 'Provide the payment details and relevant account activity. MemberShield will return an explainable assessment rather than an unexplained pass or fail.'
 
   return (
     <div className="app-shell">
       <header className="app-header">
-        <a className="brand" href="/" aria-label="MemberShield home">
+        <a
+          className="brand"
+          href="/"
+          aria-label="MemberShield home"
+        >
           <span className="brand-mark" aria-hidden="true">
             M
           </span>
@@ -27,7 +99,10 @@ function App() {
         </a>
 
         <div className="environment-badge">
-          <span className="environment-dot" aria-hidden="true" />
+          <span
+            className="environment-dot"
+            aria-hidden="true"
+          />
           Demo environment
         </div>
       </header>
@@ -46,9 +121,9 @@ function App() {
           </h1>
 
           <p className="hero-description">
-            MemberShield reviews the circumstances around a
-            payment and highlights potential warning signs before
-            money leaves your account.
+            MemberShield reviews the circumstances around a payment
+            and highlights potential warning signs before money
+            leaves your account.
           </p>
 
           <ul
@@ -70,31 +145,37 @@ function App() {
               <div>
                 <p className="section-label">Payment check</p>
                 <h2 id="assessment-title">
-                  {isReviewing
-                    ? 'Review your payment details'
-                    : 'Assess a proposed payment'}
+                  {assessmentTitle}
                 </h2>
               </div>
 
               <span className="step-badge">
-                Step {isReviewing ? '2' : '1'} of 2
+                {hasAssessment
+                  ? 'Assessment complete'
+                  : `Step ${isReviewing ? '2' : '1'} of 2`}
               </span>
             </div>
 
             <p className="card-description">
-              {isReviewing
-                ? 'Check that the information is correct before requesting a risk assessment.'
-                : 'Provide the payment details and relevant account activity. MemberShield will return an explainable assessment rather than an unexplained pass or fail.'}
+              {assessmentDescription}
             </p>
 
-            {reviewValues ? (
+            {assessment ? (
+              <RiskAssessmentResult
+                assessment={assessment}
+                onStartAgain={handleStartAgain}
+              />
+            ) : reviewValues ? (
               <PaymentAssessmentReview
                 values={reviewValues}
-                onEdit={() => setReviewValues(null)}
+                isSubmitting={isSubmitting}
+                error={error}
+                onEdit={handleEdit}
+                onAssess={handleAssessment}
               />
             ) : (
               <PaymentAssessmentForm
-                onSubmit={(values) => setReviewValues(values)}
+                onSubmit={handleFormSubmit}
               />
             )}
           </article>

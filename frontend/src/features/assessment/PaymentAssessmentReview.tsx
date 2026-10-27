@@ -2,12 +2,18 @@ import { type PaymentAssessmentFormValues } from './types'
 
 interface PaymentAssessmentReviewProps {
   values: PaymentAssessmentFormValues
+  isSubmitting: boolean
+  error: string | null
   onEdit: () => void
+  onAssess: () => void
 }
 
 function PaymentAssessmentReview({
   values,
+  isSubmitting,
+  error,
   onEdit,
+  onAssess,
 }: PaymentAssessmentReviewProps) {
   const formatCurrency = (value: string) =>
     new Intl.NumberFormat('en-GB', {
@@ -78,19 +84,31 @@ function PaymentAssessmentReview({
         </div>
       </dl>
 
+      {error && (
+        <div className="assessment-error" role="alert">
+          <strong>Assessment unavailable</strong>
+          <p>{error}</p>
+        </div>
+      )}
+
       <div className="review-actions">
         <button
           className="secondary-button"
           type="button"
           onClick={onEdit}
+          disabled={isSubmitting}
         >
           Edit payment details
         </button>
 
-        <p>
-          The assessment action will be connected to the secure API
-          in the next development slice.
-        </p>
+        <button
+          className="primary-button"
+          type="button"
+          onClick={onAssess}
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? 'Assessing payment…' : 'Assess payment'}
+        </button>
       </div>
     </div>
   )
