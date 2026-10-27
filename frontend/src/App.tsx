@@ -1,6 +1,15 @@
+import { useState } from 'react'
 import './App.css'
+import PaymentAssessmentForm from './features/assessment/PaymentAssessmentForm'
+import PaymentAssessmentReview from './features/assessment/PaymentAssessmentReview'
+import { type PaymentAssessmentFormValues } from './features/assessment/types'
 
 function App() {
+  const [reviewValues, setReviewValues] =
+    useState<PaymentAssessmentFormValues | null>(null)
+
+  const isReviewing = reviewValues !== null
+
   return (
     <div className="app-shell">
       <header className="app-header">
@@ -28,7 +37,9 @@ function App() {
           className="hero-section"
           aria-labelledby="page-title"
         >
-          <p className="eyebrow">Explainable payment protection</p>
+          <p className="eyebrow">
+            Explainable payment protection
+          </p>
 
           <h1 id="page-title">
             Pause. Check. Pay with confidence.
@@ -40,7 +51,10 @@ function App() {
             money leaves your account.
           </p>
 
-          <ul className="trust-list" aria-label="MemberShield features">
+          <ul
+            className="trust-list"
+            aria-label="MemberShield features"
+          >
             <li>Clear risk explanations</li>
             <li>Practical next steps</li>
             <li>No hidden scoring</li>
@@ -56,39 +70,43 @@ function App() {
               <div>
                 <p className="section-label">Payment check</p>
                 <h2 id="assessment-title">
-                  Assess a proposed payment
+                  {isReviewing
+                    ? 'Review your payment details'
+                    : 'Assess a proposed payment'}
                 </h2>
               </div>
 
-              <span className="step-badge">Step 1 of 2</span>
+              <span className="step-badge">
+                Step {isReviewing ? '2' : '1'} of 2
+              </span>
             </div>
 
             <p className="card-description">
-              Provide the payment details and relevant account
-              activity. MemberShield will return an explainable
-              assessment rather than an unexplained pass or fail.
+              {isReviewing
+                ? 'Check that the information is correct before requesting a risk assessment.'
+                : 'Provide the payment details and relevant account activity. MemberShield will return an explainable assessment rather than an unexplained pass or fail.'}
             </p>
 
-            <div className="assessment-preview">
-              <div className="preview-icon" aria-hidden="true">
-                ✓
-              </div>
-
-              <div>
-                <h3>What we will review</h3>
-                <p>
-                  The recipient, payment amount and recent activity
-                  associated with the transaction.
-                </p>
-              </div>
-            </div>
+            {reviewValues ? (
+              <PaymentAssessmentReview
+                values={reviewValues}
+                onEdit={() => setReviewValues(null)}
+              />
+            ) : (
+              <PaymentAssessmentForm
+                onSubmit={(values) => setReviewValues(values)}
+              />
+            )}
           </article>
 
           <aside
             className="guidance-card"
             aria-labelledby="guidance-title"
           >
-            <p className="section-label">Designed around people</p>
+            <p className="section-label">
+              Designed around people
+            </p>
+
             <h2 id="guidance-title">
               A warning should help—not frighten.
             </h2>
