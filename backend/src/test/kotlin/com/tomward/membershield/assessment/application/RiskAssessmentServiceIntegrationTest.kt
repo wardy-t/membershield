@@ -8,6 +8,7 @@ import com.tomward.membershield.assessment.domain.RiskReasonCode
 import com.tomward.membershield.assessment.persistence.RiskAssessmentRepository
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.springframework.data.domain.PageRequest
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import java.math.BigDecimal
@@ -59,7 +60,10 @@ class RiskAssessmentServiceIntegrationTest {
 
         val savedAssessment =
             repository
-                .findAllByCustomerIdOrderByAssessedAtDesc(customerId)
+                .findAllByCustomerIdOrderByAssessedAtDesc(
+                    customerId = customerId,
+                    pageable = PageRequest.of(0, 10),
+                )
                 .single()
 
         assertEquals(customerId, savedAssessment.customerId)

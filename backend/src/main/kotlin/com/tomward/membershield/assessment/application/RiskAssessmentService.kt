@@ -6,11 +6,13 @@ import com.tomward.membershield.assessment.persistence.RiskAssessmentEntity
 import com.tomward.membershield.assessment.persistence.RiskAssessmentRepository
 import com.tomward.membershield.assessment.persistence.RiskReasonEntity
 import com.tomward.membershield.assessment.risk.PaymentRiskEngine
+import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Clock
 import java.time.Instant
 import java.util.UUID
+
 
 @Service
 class RiskAssessmentService(
@@ -31,6 +33,21 @@ class RiskAssessmentService(
         )
 
         return assessment
+    }
+
+    @Transactional(readOnly = true)
+    fun findHistory(
+        customerId: UUID,
+        limit: Int,
+    ): List<RiskAssessmentEntity> {
+        require(limit in 1..50) {
+            "History limit must be between 1 and 50"
+        }
+
+        return repository.findAllByCustomerIdOrderByAssessedAtDesc(
+            customerId = customerId,
+            pageable = PageRequest.of(0, limit),
+        )
     }
 
     private fun RiskAssessment.toEntity(
