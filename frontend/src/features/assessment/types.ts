@@ -52,3 +52,22 @@ export interface RiskAssessmentResponse {
   decision: AssessmentDecision
   reasons: RiskReason[]
 }
+
+export interface RiskAssessmentHistoryItem {
+  id: string
+  recipientId: string
+  amount: number
+  currency: string
+  paymentReference: string
+  requestedAt: string
+  score: number
+  riskLevel: RiskLevel
+  decision: AssessmentDecision
+  assessedAt: string
+  reasons: RiskReason[]
+}
+
+export interface RiskAssessmentHistoryResponse {
+  count: number
+  assessments: RiskAssessmentHistoryItem[]
+}

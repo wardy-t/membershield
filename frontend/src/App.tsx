@@ -1,13 +1,20 @@
-import { useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from 'react'
 import './App.css'
 import {
   assessPayment,
+  fetchAssessmentHistory,
 } from './features/assessment/assessmentApi'
+import AssessmentHistory from './features/assessment/AssessmentHistory'
 import PaymentAssessmentForm from './features/assessment/PaymentAssessmentForm'
 import PaymentAssessmentReview from './features/assessment/PaymentAssessmentReview'
 import RiskAssessmentResult from './features/assessment/RiskAssessmentResult'
 import {
   type PaymentAssessmentFormValues,
+  type RiskAssessmentHistoryItem,
   type RiskAssessmentResponse,
 } from './features/assessment/types'
 
@@ -20,6 +27,67 @@ function App() {
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const [history, setHistory] = useState<
+    RiskAssessmentHistoryItem[]
+  >([])
+
+  const [isHistoryLoading, setIsHistoryLoading] =
+    useState(true)
+
+  const [historyError, setHistoryError] =
+    useState<string | null>(null)
+
+  const loadHistory = useCallback(async () => {
+    setIsHistoryLoading(true)
+    setHistoryError(null)
+
+    try {
+      const response = await fetchAssessmentHistory()
+      setHistory(response.assessments)
+    } catch (historyRequestError) {
+      const message =
+        historyRequestError instanceof Error
+          ? historyRequestError.message
+          : 'MemberShield could not load recent assessments.'
+
+      setHistoryError(message)
+    } finally {
+      setIsHistoryLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    let isCurrent = true
+
+    fetchAssessmentHistory()
+      .then((response) => {
+        if (isCurrent) {
+          setHistory(response.assessments)
+        }
+      })
+      .catch((historyRequestError: unknown) => {
+        if (!isCurrent) {
+          return
+        }
+
+        const message =
+          historyRequestError instanceof Error
+            ? historyRequestError.message
+            : 'MemberShield could not load recent assessments.'
+
+        setHistoryError(message)
+      })
+      .finally(() => {
+        if (isCurrent) {
+          setIsHistoryLoading(false)
+        }
+      })
+
+    return () => {
+      isCurrent = false
+    }
+  }, [])
 
   const isReviewing = reviewValues !== null && assessment === null
   const hasAssessment = assessment !== null
@@ -48,6 +116,7 @@ function App() {
     try {
       const result = await assessPayment(reviewValues)
       setAssessment(result)
+      void loadHistory()
     } catch (assessmentError) {
       const message =
         assessmentError instanceof Error
@@ -213,6 +282,13 @@ function App() {
             </ol>
           </aside>
         </section>
+
+        <AssessmentHistory
+          assessments={history}
+          isLoading={isHistoryLoading}
+          error={historyError}
+          onRefresh={() => void loadHistory()}
+        />
       </main>
 
       <footer className="app-footer">

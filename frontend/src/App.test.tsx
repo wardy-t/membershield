@@ -7,12 +7,81 @@ import {
 import userEvent from '@testing-library/user-event'
 import {
   afterEach,
+  beforeEach,
   describe,
   expect,
   it,
   vi,
 } from 'vitest'
 import App from './App'
+
+const emptyHistoryResponse = {
+  count: 0,
+  assessments: [],
+}
+
+const criticalAssessmentResponse = {
+  score: 80,
+  riskLevel: 'CRITICAL',
+  decision: 'PAUSE_AND_CONTACT_BANK',
+  reasons: [
+    {
+      code: 'NEW_RECIPIENT',
+      message: 'You have not paid this recipient before.',
+      scoreImpact: 25,
+    },
+    {
+      code: 'UNUSUAL_AMOUNT',
+      message:
+        'This amount is significantly higher than your recent payments.',
+      scoreImpact: 25,
+    },
+    {
+      code: 'LARGE_FIRST_PAYMENT',
+      message:
+        'This is a high-value first payment to this recipient.',
+      scoreImpact: 15,
+    },
+    {
+      code: 'REPEATED_ATTEMPTS',
+      message:
+        'Several payment attempts were made within a short period.',
+      scoreImpact: 15,
+    },
+  ],
+}
+
+const historyItem = {
+  id: '023acd65-1b3d-435d-b7a3-82df82655e17',
+  recipientId: '821746c0-ae8c-42dc-9e1a-bc70fc785bcc',
+  amount: 1500,
+  currency: 'GBP',
+  paymentReference: 'Invoice payment',
+  requestedAt: '2026-10-27T17:15:45.851Z',
+  score: 80,
+  riskLevel: 'CRITICAL',
+  decision: 'PAUSE_AND_CONTACT_BANK',
+  assessedAt: '2026-10-27T17:15:45.968801Z',
+  reasons: criticalAssessmentResponse.reasons,
+}
+
+function jsonResponse(
+  body: unknown,
+  status = 200,
+): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+}
+
+beforeEach(() => {
+  vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+    jsonResponse(emptyHistoryResponse),
+  )
+})
 
 afterEach(() => {
   cleanup()
@@ -71,7 +140,7 @@ async function completeHighRiskPaymentForm() {
 }
 
 describe('MemberShield application', () => {
-  it('presents the payment protection purpose and guidance', () => {
+  it('presents the payment protection purpose and empty history', async () => {
     render(<App />)
 
     expect(
@@ -99,10 +168,59 @@ describe('MemberShield application', () => {
     expect(
       screen.getByText('No hidden scoring'),
     ).toBeInTheDocument()
+
+    expect(
+      await screen.findByRole('heading', {
+        name: 'No assessments recorded yet',
+      }),
+    ).toBeInTheDocument()
+  })
+
+  it('displays persisted assessment history and reasons', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      jsonResponse({
+        count: 1,
+        assessments: [historyItem],
+      }),
+    )
+
+    render(<App />)
+
+    expect(
+      await screen.findByText('Invoice payment'),
+    ).toBeInTheDocument()
+
+    expect(screen.getByText('£1,500.00')).toBeInTheDocument()
+    expect(screen.getByText('critical risk')).toBeInTheDocument()
+    expect(screen.getByText('80/100')).toBeInTheDocument()
+
+    const user = userEvent.setup()
+
+    await user.click(screen.getByText('Invoice payment'))
+
+    expect(
+      screen.getByText('Pause and contact the bank'),
+    ).toBeInTheDocument()
+
+    expect(
+      screen.getByText(
+        'You have not paid this recipient before.',
+      ),
+    ).toBeInTheDocument()
+
+    expect(
+      screen.getByText(
+        'Several payment attempts were made within a short period.',
+      ),
+    ).toBeInTheDocument()
   })
 
   it('allows payment details to be reviewed and edited', async () => {
     render(<App />)
+
+    await screen.findByRole('heading', {
+      name: 'No assessments recorded yet',
+    })
 
     const user = await completeHighRiskPaymentForm()
 
@@ -146,50 +264,33 @@ describe('MemberShield application', () => {
     ).toBeInTheDocument()
   })
 
-  it('displays an explainable assessment returned by the API', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          score: 80,
-          riskLevel: 'CRITICAL',
-          decision: 'PAUSE_AND_CONTACT_BANK',
-          reasons: [
+  it('displays an assessment and refreshes history', async () => {
+    const fetchMock = vi.mocked(fetch)
+
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse(emptyHistoryResponse),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse(criticalAssessmentResponse),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          count: 1,
+          assessments: [
             {
-              code: 'NEW_RECIPIENT',
-              message:
-                'You have not paid this recipient before.',
-              scoreImpact: 25,
-            },
-            {
-              code: 'UNUSUAL_AMOUNT',
-              message:
-                'This amount is significantly higher than your recent payments.',
-              scoreImpact: 25,
-            },
-            {
-              code: 'LARGE_FIRST_PAYMENT',
-              message:
-                'This is a high-value first payment to this recipient.',
-              scoreImpact: 15,
-            },
-            {
-              code: 'REPEATED_ATTEMPTS',
-              message:
-                'Several payment attempts were made within a short period.',
-              scoreImpact: 15,
+              ...historyItem,
+              reasons: [],
             },
           ],
         }),
-        {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        },
-      ),
-    )
+      )
 
     render(<App />)
+
+    await screen.findByRole('heading', {
+      name: 'No assessments recorded yet',
+    })
 
     const user = await completeHighRiskPaymentForm()
 
@@ -206,10 +307,7 @@ describe('MemberShield application', () => {
       }),
     ).toBeInTheDocument()
 
-    expect(
-      screen.getByText('Critical risk'),
-    ).toBeInTheDocument()
-
+    expect(screen.getByText('Critical risk')).toBeInTheDocument()
     expect(screen.getByText('80')).toBeInTheDocument()
 
     expect(
@@ -225,27 +323,37 @@ describe('MemberShield application', () => {
     ).toBeInTheDocument()
 
     expect(
-      screen.getByText(
-        'Several payment attempts were made within a short period.',
-      ),
+      await screen.findByText('Invoice payment'),
     ).toBeInTheDocument()
 
-    expect(fetch).toHaveBeenCalledWith(
+    expect(fetchMock).toHaveBeenCalledWith(
       '/api/v1/risk-assessments',
       expect.objectContaining({
         method: 'POST',
       }),
     )
+
+    expect(fetchMock).toHaveBeenCalledTimes(3)
   })
 
   it('shows a helpful message when the assessment fails', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(null, {
-        status: 500,
-      }),
-    )
+    const fetchMock = vi.mocked(fetch)
+
+    fetchMock
+      .mockResolvedValueOnce(
+        jsonResponse(emptyHistoryResponse),
+      )
+      .mockResolvedValueOnce(
+        new Response(null, {
+          status: 500,
+        }),
+      )
 
     render(<App />)
+
+    await screen.findByRole('heading', {
+      name: 'No assessments recorded yet',
+    })
 
     const user = await completeHighRiskPaymentForm()
 
@@ -266,5 +374,7 @@ describe('MemberShield application', () => {
         name: 'Assess payment',
       }),
     ).toBeEnabled()
+
+    expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 })
