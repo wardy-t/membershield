@@ -1,6 +1,7 @@
 import {
   type PaymentAssessmentFormValues,
   type PaymentAssessmentRequest,
+  type RiskAssessmentHistoryResponse,
   type RiskAssessmentResponse,
 } from './types'
 
@@ -46,4 +47,25 @@ export async function assessPayment(
   }
 
   return (await response.json()) as RiskAssessmentResponse
+}
+
+export async function fetchAssessmentHistory(
+  limit = 5,
+): Promise<RiskAssessmentHistoryResponse> {
+  const searchParams = new URLSearchParams({
+    customerId: DEMO_CUSTOMER_ID,
+    limit: String(limit),
+  })
+
+  const response = await fetch(
+    `/api/v1/risk-assessments?${searchParams.toString()}`,
+  )
+
+  if (!response.ok) {
+    throw new Error(
+      'MemberShield could not load recent assessments.',
+    )
+  }
+
+  return (await response.json()) as RiskAssessmentHistoryResponse
 }
